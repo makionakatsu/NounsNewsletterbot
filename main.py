@@ -53,6 +53,7 @@ for mail_id in mail_ids:
 
     if msg.is_multipart():
         for part in msg.walk():
+            print(f"content_type: {part.get_content_type()}")
             if part.get_content_type() == "text/plain":
                 text = part.get_payload(decode=True).decode()
             elif part.get_content_type() == "text/html":
@@ -73,6 +74,8 @@ for mail_id in mail_ids:
         text = msg.get_payload(decode=True).decode()
     
     print(text)
+    print(f"mail_ids: {mail_ids}")
+
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
