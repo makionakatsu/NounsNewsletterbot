@@ -1,37 +1,30 @@
-# name: Run script daily at 17:00(JST)
-#
-# on:
-#  schedule:
-#    - cron: '0 8 * * *'
-
-name: Run script daily at 17:00 and allow manual triggers
+name: Run Python script daily at 17:00
 
 on:
   schedule:
-    - cron: '0 17 * * *'
-  workflow_dispatch:
+    - cron: '0 8 * * *'
 
 jobs:
-  your_job_name:
+  run_script:
     runs-on: ubuntu-latest
+
     steps:
     - name: Check out repository
       uses: actions/checkout@v2
 
-    - name: Setup Node.js 16
-      uses: actions/setup-node@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        node-version: 16
+        python-version: '3.x'
 
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Step that requires the secrets
+    - name: Run Python script
       env:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
         WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-      run: |
-        # Use the secrets as environment variables in this step
-        python your_script_that_uses_the_secrets.py
+      run: python your_script.py
+
