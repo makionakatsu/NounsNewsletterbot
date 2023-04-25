@@ -1,7 +1,7 @@
 import email
 from email.header import decode_header
 import imaplib
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import requests
 import openai
 import os
@@ -25,6 +25,15 @@ _, data = mail.search(None, "UNSEEN")
 # メールIDの取得
 mail_ids = data[0].split()
 
+# メールの本文とURLの取得
+def process_html_element(element):
+    if isinstance(element, Tag):
+        if element.name == "a":
+            url = element.get("href")
+            if url:
+                return f"URL: {url}\n"
+    return ""
+
 # 各メールの処理
 for mail_id in mail_ids:
     # メールの取得
@@ -42,7 +51,6 @@ for mail_id in mail_ids:
         else:
             decoded_subject_string += item[0]
 
-    # メールの本文の取得
     if msg.is_multipart():
         for part in msg.walk():
             if part.get_content_type() == "text/plain":
@@ -51,17 +59,18 @@ for mail_id in mail_ids:
                 html_content = part.get_payload(decode=True).decode()
                 soup = BeautifulSoup(html_content, "html.parser")
 
-                # テキストの取得
-                text = soup.get_text()
+                # テキストとURLの取得
+                result = []
+                for element in soup.children:
+                    if isinstance(element, Tag) and element.name == "body":
+                        for child in element.children:
+                            if child.string:
+                                result.append(child.string.strip())
+                            result.append(process_html_element(child))
+                text = "".join(result).strip()
 
-                # URLの取得
-                for link in soup.find_all("a"):
-                    url = link.get("href")
-                    if url:
-                        urls.append(url)
     else:
         text = msg.get_payload(decode=True).decode()
-
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
