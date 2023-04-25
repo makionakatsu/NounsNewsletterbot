@@ -71,13 +71,19 @@ for mail_id in mail_ids:
 
     else:
         text = msg.get_payload(decode=True).decode()
+    
+    print(text)
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
             {"role": "system", "content": "あなたは、MECEや5W1Hの思考法を用いることが得意です。"},
-            {"role": "user", "content": f"以下のテキストを、見出し、小見出し、URLは省略せずに、内容を日本語で要約してください。\nフォーマットは、以下としてください。\n1.見出し\n・要約内容\n2.見出し\n・要約内容\n{text}"}
+            {"role": "user", "content": f"""
+             以下のテキストを、見出し、小見出し、URLは省略せずに、内容を日本語で要約してください。
+             見出し、要約内容、URLの順に箇条書きで出力してください。 
+             テキスト：{text}
+             """}
         ],
     )
     summarized_text = response["choices"][0]["message"]["content"]
