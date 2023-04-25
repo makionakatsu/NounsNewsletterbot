@@ -63,12 +63,13 @@ for mail_id in mail_ids:
 
                 # テキストとURLの取得
                 result = []
-                for element in soup.children:
-                    if isinstance(element, Tag) and element.name == "body":
-                        for child in element.children:
-                            if child.string:
-                                result.append(child.string.strip())
-                            result.append(process_html_element(child))
+                for element in soup.find_all("div"):
+                    for child in element.children:
+                        if child.string:
+                            result.append(child.string.strip())
+                        result.append(process_html_element(child))
+                text = "".join(result).strip()
+
 
                 # ここでBeautifulSoupで取得したテキストをログに出力
                 print("BeautifulSoupで取得したテキスト:")
