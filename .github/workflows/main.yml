@@ -1,8 +1,15 @@
-name: Run script daily at 17:00(JST)
+# name: Run script daily at 17:00(JST)
+#
+# on:
+#  schedule:
+#    - cron: '0 8 * * *'
+
+name: Run script daily at 17:00 and allow manual triggers
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
 
 jobs:
   your_job_name:
