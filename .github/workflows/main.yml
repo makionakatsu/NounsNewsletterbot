@@ -27,6 +27,6 @@ jobs:
         PASSWORD: ${{ secrets.PASSWORD }}
         WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-      run: python your_script.py
+      run: python main.py
 
 
