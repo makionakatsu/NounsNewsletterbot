@@ -68,14 +68,18 @@ for mail_id in mail_ids:
                             if child.string:
                                 result.append(child.string.strip())
                             result.append(process_html_element(child))
+
+                # ここでBeautifulSoupで取得したテキストをログに出力
+                print("BeautifulSoupで取得したテキスト:")
+                print("".join(result).strip())
+
                 text = "".join(result).strip()
 
     else:
         text = msg.get_payload(decode=True).decode()
-    
+
     print(text)
     print(f"mail_ids: {mail_ids}")
-
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
