@@ -50,9 +50,18 @@ for mail_id in mail_ids:
             elif part.get_content_type() == "text/html":
                 html_content = part.get_payload(decode=True).decode()
                 soup = BeautifulSoup(html_content, "html.parser")
+
+                # テキストの取得
                 text = soup.get_text()
+
+                # URLの取得
+                for link in soup.find_all("a"):
+                    url = link.get("href")
+                    if url:
+                        urls.append(url)
     else:
         text = msg.get_payload(decode=True).decode()
+
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
