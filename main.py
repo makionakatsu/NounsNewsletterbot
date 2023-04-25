@@ -53,8 +53,6 @@ for mail_id in mail_ids:
                 text = soup.get_text()
     else:
         text = msg.get_payload(decode=True).decode()
-        
-        print(text)
 
     # GPT-4によるテキストの要約
     response = openai.ChatCompletion.create(
