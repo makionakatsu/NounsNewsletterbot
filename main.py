@@ -58,6 +58,7 @@ for mail_id in mail_ids:
                 text = part.get_payload(decode=True).decode()
             elif part.get_content_type() == "text/html":
                 html_content = part.get_payload(decode=True).decode()
+                print(f"HTML content: {html_content}")
                 soup = BeautifulSoup(html_content, "html.parser")
 
                 # テキストとURLの取得
