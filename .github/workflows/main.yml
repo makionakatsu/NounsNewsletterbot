@@ -2,7 +2,7 @@ name: Run Python script daily at 17:00 and allow manual triggers
 
 on:
   schedule:
-    - cron: '0  * * *'
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 jobs:
