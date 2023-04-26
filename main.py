@@ -94,7 +94,7 @@ else:
 
         for chunk in chunks:
             response = openai.ChatCompletion.create(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
                     {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
