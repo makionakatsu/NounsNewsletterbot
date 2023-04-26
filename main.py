@@ -21,16 +21,16 @@ _, data = mail.search(None, "UNSEEN")
 
 mail_ids = data[0].split()
 
-def get_sections(soup):
-    sections = []
+def get_text(soup):
+    text = ""
     for element in soup.find_all(["h1", "h2", "h3", "p", "a"]):
         if element.name == "a":
             url = element.get("href")
             if url:
-                sections.append(f"URL: {url}\n")
+                text += f"URL: {url}\n"
         else:
-            sections.append(element.get_text(strip=True))
-    return sections
+            text += element.get_text(strip=True)
+    return text
 
 if len(mail_ids) == 0:
     print("No unread mails found. Skipping Discord message sending.")
@@ -57,34 +57,35 @@ else:
                     html_content = part.get_payload(decode=True).decode()
                     soup = BeautifulSoup(html_content, "html.parser")
 
-                    sections = get_sections(soup)
-
-                    print("BeautifulSoupで取得したセクション:")
-                    print(sections)
+                    text = get_text(soup)
+                    print("BeautifulSoupで取得したテキスト:")
+                    print(text)
         else:
             text = msg.get_payload(decode=True).decode()
 
         print(text)
         print(f"mail_ids: {mail_ids}")
 
-        summarized_sections = []
+        chunks = [text[i:i + 6000] for i in range(0, len(text), 6000)]
 
-        for section in sections:
+        summarized_chunks = []
+
+        for chunk in chunks:
             response = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
-                    {"role": "user", "content": f"""以下のセクションを、題名、内容、URLの順に出力してください。
+                    {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
                     URLは1つの題名に複数紐づくことがあります。
                     出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
                     箇条書きで出力してください
                     内容は、文字数が1000字以上の場合は500字程度に要約してください。
-                    URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。セクション：{section}"""}
+                    URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。チャンク：{chunk}"""}
                 ],
             )
-            summarized_sections.append(response["choices"][0]["message"]["content"])
+            summarized_chunks.append(response["choices"][0]["message"]["content"])
 
-        summarized_text = "\n".join(summarized_sections)
+        summarized_text = "\n".join(summarized_chunks)
 
         data = {
             "content": f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
@@ -93,6 +94,3 @@ else:
         response = requests.post(WEBHOOK_URL, json=data)
         if response.status_code != 204:
             print(f"Failed to send message: {response.text}")
-
-
- 
