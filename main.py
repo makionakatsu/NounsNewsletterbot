@@ -26,7 +26,7 @@ def get_unread_mail_ids(mail):
 
 def get_text(soup):
     text = ""
-    for element in soup.find_all(["h1", "h2", "h3", "p", "a"]):
+    for element in soup.find_all(["h1", "h3", "p", "a"]):
         if element.name == "a":
             url = element.get("href")
             if url:
