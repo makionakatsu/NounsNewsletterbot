@@ -2,7 +2,7 @@ name: Run Python script daily at 17:00 and allow manual triggers
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 9 * * *'
   workflow_dispatch:
 
 jobs:
@@ -28,5 +28,4 @@ jobs:
         WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
       run: python main.py
-
 
