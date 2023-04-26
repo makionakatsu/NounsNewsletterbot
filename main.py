@@ -32,6 +32,15 @@ def get_text(soup):
             text += element.get_text(strip=True)
     return text
 
+def send_discord_message(content):
+    chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
+    
+    for chunk in chunks:
+        data = {"content": chunk}
+        response = requests.post(WEBHOOK_URL, json=data)
+        if response.status_code != 204:
+            print(f"Failed to send message: {response.text}")
+
 if len(mail_ids) == 0:
     print("No unread mails found. Skipping Discord message sending.")
 else:
@@ -87,9 +96,8 @@ else:
 
         summarized_text = "\n".join(summarized_chunks)
 
-        data = {
-            "content": f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
-        }
+        content = f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
+        send_discord_message(content)
 
         response = requests.post(WEBHOOK_URL, json=data)
         if response.status_code != 204:
