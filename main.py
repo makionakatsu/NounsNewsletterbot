@@ -35,11 +35,14 @@ def process_html_element(element):
     return ""
 
 # 各メールの処理
-for mail_id in mail_ids:
+if len(mail_ids) == 0: # 未読メールが存在しない場合
+    print("No unread mails found. Skipping Discord message sending.")
+else:
+    for mail_id in mail_ids:
     # メールの取得
-    _, msg_data = mail.fetch(mail_id, "(RFC822)")
-    raw_email = msg_data[0][1]
-    msg = email.message_from_bytes(raw_email)
+        _, msg_data = mail.fetch(mail_id, "(RFC822)")
+        raw_email = msg_data[0][1]
+        msg = email.message_from_bytes(raw_email)
 
     # Subjectのデコード
     subject = msg["subject"]
