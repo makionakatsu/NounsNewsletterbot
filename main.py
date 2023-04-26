@@ -48,10 +48,14 @@ def send_discord_message(content):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
     
     for chunk in chunks:
+        if isinstance(chunk, bytes):
+            chunk = chunk.decode('utf-8')
+        
         data = {"content": chunk}
         response = requests.post(WEBHOOK_URL, json=data)
         if response.status_code != 204:
             print(f"Failed to send message: {response.text}")
+
 
 
 if len(mail_ids) == 0:
