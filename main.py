@@ -35,11 +35,14 @@ def process_html_element(element):
 
 def get_text_and_urls(soup):
     result = []
-    for element in soup.descendants:
-        if element.string:
-            result.append(element.string.strip())
-        result.append(process_html_element(element))
-    return "".join(result).strip()
+    for element in soup.find_all(['h1', 'h2', 'h3', 'p', 'a']):
+        if element.name == 'a':
+            url = element.get('href')
+            if url:
+                result.append(f'URL: {url}\n')
+        else:
+            result.append(element.get_text(strip=True))
+    return ''.join(result).strip()
 
 # 各メールの処理
 if len(mail_ids) == 0: # 未読メールが存在しない場合
@@ -68,8 +71,12 @@ else:
                 elif part.get_content_type() == "text/html":
                     html_content = part.get_payload(decode=True).decode()
                     soup = BeautifulSoup(html_content, "html.parser")
+
                     text = get_text_and_urls(soup)
 
+                    # ここでBeautifulSoupで取得したテキストをログに出力
+                    print("BeautifulSoupで取得したテキスト:")
+                    print(text)
         else:
             text = msg.get_payload(decode=True).decode()
 
