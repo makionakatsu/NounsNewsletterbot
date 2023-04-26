@@ -88,13 +88,13 @@ else:
         print(f"mail_ids: {mail_ids}")
 
         filtered_text = filter_text(text)
-        chunks = [filtered_text[i:i + 4000] for i in range(0, len(filtered_text), 4000)]
+        chunks = [filtered_text[i:i + 8000] for i in range(0, len(filtered_text), 8000)]
 
         summarized_chunks = []
 
         for chunk in chunks:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
                     {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
