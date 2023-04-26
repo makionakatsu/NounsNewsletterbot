@@ -53,6 +53,7 @@ def send_discord_message(content):
         if response.status_code != 204:
             print(f"Failed to send message: {response.text}")
 
+
 if len(mail_ids) == 0:
     print("No unread mails found. Skipping Discord message sending.")
 else:
