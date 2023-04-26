@@ -88,7 +88,7 @@ else:
         print(f"mail_ids: {mail_ids}")
 
         filtered_text = filter_text(text)
-        chunks = [filtered_text[i:i + 8000] for i in range(0, len(filtered_text), 8000)]
+        chunks = [filtered_text[i:i + 4000] for i in range(0, len(filtered_text), 4000)]
 
         summarized_chunks = []
 
