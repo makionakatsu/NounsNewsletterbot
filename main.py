@@ -32,6 +32,18 @@ def get_text(soup):
             text += element.get_text(strip=True)
     return text
 
+def filter_text(text):
+    lines = text.split('\n')
+    filtered_lines = []
+    for line in lines:
+        if line.startswith("URL:"):
+            continue
+        elif any(tag in line for tag in ["<h1>", "<h2>", "<h3>", "<p>", "<a"]):
+            continue
+        else:
+            filtered_lines.append(line)
+    return '\n'.join(filtered_lines)
+
 def send_discord_message(content):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
     
@@ -75,7 +87,8 @@ else:
         print(text)
         print(f"mail_ids: {mail_ids}")
 
-        chunks = [text[i:i + 8000] for i in range(0, len(text), 8000)]
+        filtered_text = filter_text(text)
+        chunks = [filtered_text[i:i + 8000] for i in range(0, len(filtered_text), 8000)]
 
         summarized_chunks = []
 
@@ -102,3 +115,8 @@ else:
         response = requests.post(WEBHOOK_URL, json=data)
         if response.status_code != 204:
             print(f"Failed to send message: {response.text}")
+
+
+
+
+
