@@ -74,7 +74,7 @@ def summarize_text(text):
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
+                {"role": "system", "content": "あなたは、ニュースを受け取り、日本語でわかりやすく伝える役割です。"},
                 {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
                 URLは1つの題名に複数紐づくことがあります。
                 出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
