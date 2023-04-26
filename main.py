@@ -75,7 +75,7 @@ else:
         print(text)
         print(f"mail_ids: {mail_ids}")
 
-        chunks = [text[i:i + 6000] for i in range(0, len(text), 6000)]
+        chunks = [text[i:i + 30000] for i in range(0, len(text), 30000)]
 
         summarized_chunks = []
 
