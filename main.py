@@ -25,7 +25,6 @@ _, data = mail.search(None, "UNSEEN")
 # メールIDの取得
 mail_ids = data[0].split()
 
-# メールの本文とURLの取得
 def process_html_element(element):
     if isinstance(element, Tag):
         if element.name == "a":
@@ -34,82 +33,73 @@ def process_html_element(element):
                 return f"URL: {url}\n"
     return ""
 
+def get_text_and_urls(soup):
+    result = []
+    for element in soup.descendants:
+        if element.string:
+            result.append(element.string.strip())
+        result.append(process_html_element(element))
+    return "".join(result).strip()
+
 # 各メールの処理
 if len(mail_ids) == 0: # 未読メールが存在しない場合
     print("No unread mails found. Skipping Discord message sending.")
 else:
     for mail_id in mail_ids:
-    # メールの取得
+        # メールの取得
         _, msg_data = mail.fetch(mail_id, "(RFC822)")
         raw_email = msg_data[0][1]
         msg = email.message_from_bytes(raw_email)
 
-    # Subjectのデコード
-    subject = msg["subject"]
-    decoded_subject = decode_header(subject)
-    decoded_subject_string = ""
-    for item in decoded_subject:
-        if item[1]:
-            decoded_subject_string += item[0].decode(item[1])
+        # Subjectのデコード
+        subject = msg["subject"]
+        decoded_subject = decode_header(subject)
+        decoded_subject_string = ""
+        for item in decoded_subject:
+            if item[1]:
+                decoded_subject_string += item[0].decode(item[1])
+            else:
+                decoded_subject_string += item[0]
+
+        if msg.is_multipart():
+            for part in msg.walk():
+                if part.get_content_type() == "text/plain":
+                    text = part.get_payload(decode=True).decode()
+                elif part.get_content_type() == "text/html":
+                    html_content = part.get_payload(decode=True).decode()
+                    soup = BeautifulSoup(html_content, "html.parser")
+                    text = get_text_and_urls(soup)
+
         else:
-            decoded_subject_string += item[0]
+            text = msg.get_payload(decode=True).decode()
 
-    if msg.is_multipart():
-        for part in msg.walk():
-            print(f"content_type: {part.get_content_type()}")
-            if part.get_content_type() == "text/plain":
-                text = part.get_payload(decode=True).decode()
-            elif part.get_content_type() == "text/html":
-                html_content = part.get_payload(decode=True).decode()
-                print(f"HTML content: {html_content}")
-                soup = BeautifulSoup(html_content, "html.parser")
+        print(text)
+        print(f"mail_ids: {mail_ids}")
 
-                # テキストとURLの取得
-                result = []
-                for element in soup.find_all("div"):
-                    for child in element.children:
-                        if child.string:
-                            result.append(child.string.strip())
-                        result.append(process_html_element(child))
-                text = "".join(result).strip()
+        # GPT-4によるテキストの要約
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
+                {"role": "user", "content": f"""
+                以下のテキストを、題名、内容、URLの順に出力してください。
+                URLは1つの題名に複数紐づくことがあります。
+                出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
+                箇条書きで出力してください
+                内容は、文字数が1000字以上の場合は500字程度に要約してください。
+                URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。
+                テキスト：{text}
+                """}
+            ],
+        )
+        summarized_text = response["choices"][0]["message"]["content"]
 
+        # Discordに送信するデータの作成
+        data = {
+            "content": f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
+        }
 
-                # ここでBeautifulSoupで取得したテキストをログに出力
-                print("BeautifulSoupで取得したテキスト:")
-                print("".join(result).strip())
-
-                text = "".join(result).strip()
-
-    else:
-        text = msg.get_payload(decode=True).decode()
-
-    print(text)
-    print(f"mail_ids: {mail_ids}")
-
-    # GPT-4によるテキストの要約
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "あなたは、ニュースを受け取り、わかりやすく伝える役割です。"},
-            {"role": "user", "content": f"""
-             以下のテキストを、題名、内容、URLの順に出力してください。
-             URLは1つの題名に複数紐づくことがあります。
-             出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
-             箇条書きで出力してください
-             内容は、文字数が1000字以上の場合は500字程度に要約してください。
-             URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。
-             テキスト：{text}
-             """}
-        ],
-    )
-    summarized_text = response["choices"][0]["message"]["content"]
-
-    # Discordに送信するデータの作成
-    data = {
-        "content": f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
-    }
-
-    # Discord Webhookを使ってメッセージを送信
-    response = requests.post(WEBHOOK_URL, json=data)
-    if response.status_code != 204:
-        print(f"Failed to send message: {response.text}")
+        # Discord Webhookを使ってメッセージを送信
+        response = requests.post(WEBHOOK_URL, json=data)
+        if response.status_code != 204:
+            print(f"Failed to send message: {response.text}")
