@@ -51,6 +51,7 @@ def process_mail(mail_id, mail):
                 html_content = part.get_payload(decode=True).decode()
                 soup = BeautifulSoup(html_content, "html.parser")
                 text = get_text(soup)
+                print(f"BeautifulSoup extracted content: {text}") 
     else:
         text = msg.get_payload(decode=True).decode()
 
@@ -71,6 +72,7 @@ def summarize_text(text):
     summarized_chunks = []
 
     for chunk in chunks:
+        print(f"Current chunk: {chunk}")
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -84,8 +86,9 @@ def summarize_text(text):
             ],
         )
         summarized_chunks.append(response["choices"][0]["message"]["content"])
-        
+        print(f"Summarized text: {summarized_text}")
         summarized_text = "\n".join(summarized_chunks)
+        
         return summarized_text
     
 def send_discord_message(content):
