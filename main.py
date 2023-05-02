@@ -72,7 +72,6 @@ def summarize_text(text):
     summarized_chunks = []
 
     for chunk in chunks:
-        print(f"Current chunk: {chunk}")
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -86,9 +85,12 @@ def summarize_text(text):
             ],
         )
         summarized_chunks.append(response["choices"][0]["message"]["content"])
-        print(f"Summarized text: {summarized_text}")
-    summarized_text = "\n".join(summarized_chunks)        
+
+    summarized_text = "\n".join(summarized_chunks)
     return summarized_text
+
+
+
     
 def send_discord_message(content):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
