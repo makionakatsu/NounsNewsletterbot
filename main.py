@@ -6,23 +6,19 @@ import requests
 import openai
 import os
 
-EMAIL = os.environ.get("EMAIL")
-PASSWORD = os.environ.get("PASSWORD")
-WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
-openai.api_key = os.environ.get("OPENAI_KEY")
 
-IMAP_SERVER = "imap.gmail.com"
-
-def connect_mail_server():
-    mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-    mail.login(EMAIL, PASSWORD)
+def connect_mail_server(email, password):
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail.login(email, password)
     mail.select("inbox")
     return mail
+
 
 def get_unread_mail_ids(mail):
     _, data = mail.search(None, "UNSEEN")
     mail_ids = data[0].split()
     return mail_ids
+
 
 def get_text(soup):
     text = ""
@@ -34,6 +30,7 @@ def get_text(soup):
         else:
             text += element.get_text(strip=True)
     return text
+
 
 def process_mail(mail_id, mail):
     _, msg_data = mail.fetch(mail_id, "(RFC822)")
@@ -51,11 +48,11 @@ def process_mail(mail_id, mail):
                 html_content = part.get_payload(decode=True).decode()
                 soup = BeautifulSoup(html_content, "html.parser")
                 text = get_text(soup)
-                print(f"BeautifulSoup extracted content: {text}") 
     else:
         text = msg.get_payload(decode=True).decode()
 
     return text, decoded_subject_string
+
 
 def decode_subject(subject):
     decoded_subject = decode_header(subject)
@@ -66,6 +63,7 @@ def decode_subject(subject):
         else:
             decoded_subject_string += item[0]
     return decoded_subject_string
+
 
 def summarize_text(text):
     chunks = [text[i:i + 8000] for i in range(0, len(text), 8000)]
@@ -89,22 +87,24 @@ def summarize_text(text):
     summarized_text = "\n".join(summarized_chunks)
     return summarized_text
 
-
-
-    
-def send_discord_message(content):
+def send_discord_message(webhook_url, content):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
     for chunk in chunks:
         if isinstance(chunk, bytes):
             chunk = chunk.decode('utf-8')
 
         data = {"content": chunk}
-        response = requests.post(WEBHOOK_URL, json=data)
+        response = requests.post(webhook_url, json=data)
         if response.status_code != 204:
             print(f"Failed to send message: {response.text}")
 
 def main():
-    mail = connect_mail_server()
+    email = os.environ.get("EMAIL")
+    password = os.environ.get("PASSWORD")
+    webhook_url = os.environ.get("WEBHOOK_URL")
+    openai.api_key = os.environ.get("OPENAI_KEY")
+
+    mail = connect_mail_server(email, password)
     mail_ids = get_unread_mail_ids(mail)
 
     if len(mail_ids) == 0:
@@ -114,7 +114,8 @@ def main():
             text, decoded_subject_string = process_mail(mail_id, mail)
             summarized_text = summarize_text(text)
             content = f"**Subject:** {decoded_subject_string}\n**Summarized content:**\n{summarized_text}"
-            send_discord_message(content)
+            send_discord_message(webhook_url, content)
 
 if __name__ == "__main__":
     main()
+
