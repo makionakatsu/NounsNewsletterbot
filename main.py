@@ -7,20 +7,20 @@ import openai
 import os
 import time
 
-
+# メールサーバーに接続する
 def connect_mail_server(email, password):
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(email, password)
     mail.select("inbox")
     return mail
 
-
+# 未読メールのIDを取得する
 def get_unread_mail_ids(mail):
     _, data = mail.search(None, "UNSEEN")
     mail_ids = data[0].split()
     return mail_ids
 
-
+# BeautifulSoupオブジェクトからテキストを抽出する
 def get_text(soup):
     text = ""
     for element in soup.find_all(["h1", "h3", "p", "a"]):
@@ -32,7 +32,7 @@ def get_text(soup):
             text += element.get_text(strip=True)
     return text
 
-
+# メールを処理し、テキストとデコードされた件名を返す
 def process_mail(mail_id, mail):
     _, msg_data = mail.fetch(mail_id, "(RFC822)")
     raw_email = msg_data[0][1]
@@ -54,7 +54,7 @@ def process_mail(mail_id, mail):
 
     return text, decoded_subject_string
 
-
+# 件名をデコードする
 def decode_subject(subject):
     decoded_subject = decode_header(subject)
     decoded_subject_string = ""
@@ -65,7 +65,7 @@ def decode_subject(subject):
             decoded_subject_string += item[0]
     return decoded_subject_string
 
-
+# テキストを要約する
 def summarize_text(text):
     chunks = [text[i:i + 8000] for i in range(0, len(text), 8000)]
     summarized_chunks = []
@@ -93,7 +93,7 @@ def summarize_text(text):
     summarized_text = "\n".join(summarized_chunks)
     return summarized_text
 
-
+# Discordへメッセージを送信する
 def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
 
@@ -119,7 +119,7 @@ def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
 
         time.sleep(1)  # Add a delay between message sending
 
-
+# メイン処理
 def main():
     email = os.environ.get("EMAIL")
     password = os.environ.get("PASSWORD")
