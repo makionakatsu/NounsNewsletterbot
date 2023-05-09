@@ -70,22 +70,28 @@ def summarize_text(text):
     summarized_chunks = []
 
     for chunk in chunks:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "あなたは、ニュースを受け取り、日本語でわかりやすく伝える役割です。"},
-                {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
-                URLは1つの題名に複数紐づくことがあります。
-                出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
-                箇条書きで出力してください
-                内容は、文字数が1000字以上の場合は500字程度に要約してください。
-                URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。チャンク：{chunk}"""}
-            ],
-        )
-        summarized_chunks.append(response["choices"][0]["message"]["content"])
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "あなたは、ニュースを受け取り、日本語でわかりやすく伝える役割です。"},
+                    {"role": "user", "content": f"""以下のチャンクを、題名、内容、URLの順に出力してください。
+                    URLは1つの題名に複数紐づくことがあります。
+                    出力フォーマットは、題名を太字かつ下線として、題名の冒頭に内容に即した絵文字をつけてください。
+                    箇条書きで出力してください
+                    内容は、文字数が1000字以上の場合は500字程度に要約してください。
+                    URLの末尾は改行し、破線を引いて次の見出しに移ることをわかるようにしてください。チャンク：{chunk}"""}
+                ],
+                timeout=20  # Increase the timeout value
+            )
+            summarized_chunks.append(response["choices"][0]["message"]["content"])
+        except Exception as e:
+            print(f"Error occurred during API call: {e}")
+            continue
 
     summarized_text = "\n".join(summarized_chunks)
     return summarized_text
+
 
 def send_discord_message(webhook_url, content):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
