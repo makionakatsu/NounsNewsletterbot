@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 import openai
 import os
+import time
 
 
 def connect_mail_server(email, password):
@@ -93,16 +94,31 @@ def summarize_text(text):
     return summarized_text
 
 
-def send_discord_message(webhook_url, content):
+def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
     chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
+
     for chunk in chunks:
         if isinstance(chunk, bytes):
             chunk = chunk.decode('utf-8')
 
         data = {"content": chunk}
-        response = requests.post(webhook_url, json=data)
-        if response.status_code != 204:
-            print(f"Failed to send message: {response.text}")
+        retries = 0
+
+        while retries <= max_retries:
+            response = requests.post(webhook_url, json=data)
+            if response.status_code == 204:
+                break
+            else:
+                print(f"Failed to send message (attempt {retries + 1}): {response.text}")
+                if retries < max_retries:
+                    time.sleep(retry_delay)
+                    retries += 1
+                else:
+                    print(f"Giving up after {max_retries} attempts")
+                    return
+
+        time.sleep(1)  # Add a delay between message sending
+
 
 def main():
     email = os.environ.get("EMAIL")
