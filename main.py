@@ -40,15 +40,15 @@ def process_mail(mail_id, mail):
 
     decoded_subject_string = decode_subject(msg["subject"])
 
+    text = ""
     if msg.is_multipart():
-        text = ""
         for part in msg.walk():
             if part.get_content_type() == "text/plain":
-                text = part.get_payload(decode=True).decode()
+                text += part.get_payload(decode=True).decode()
             elif part.get_content_type() == "text/html":
                 html_content = part.get_payload(decode=True).decode()
                 soup = BeautifulSoup(html_content, "html.parser")
-                text = get_text(soup)
+                text += get_text(soup)
     else:
         text = msg.get_payload(decode=True).decode()
 
@@ -75,13 +75,17 @@ def summarize_text(text):
             response = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "あなたは、ニュースを受け取り、日本語で感情を込めてわかりやすく伝える役割です。受け取ったテキストを、題名、内容、URLの順に出力してください。URLは1つの題名に複数紐づくことがあります。"},
-                    {"role": "user", "content": f"""フォーマットは以下のとおりです。：
-                     題名内容に即した絵文字　題名（太字）
+                    {"role": "system", "content": """あなたは、ニュースを受け取り、日本語で感情を込めてわかりやすく
+                     伝える役割です。受け取ったテキストを、題名、内容、URLの順に出力してください。
+                     URLは1つの題名に複数紐づくことがあります。
+                     フォーマットは以下のとおりです。：
+                     (題名内容に即した絵文字)(題名,太字)
                      ・（内容）
-                     🔗URL：
-                     話題ごとに、⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨を挿入して区切る。URLの末尾は改行し、次の見出しに移ることをわかるようにしてください。
-                     受け取りチャンク：{chunk}"""}
+                     🔗(URL)
+                     話題ごとに、⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨ ⌐◨-◨を挿入して区切る。
+                     URLの末尾は改行し、次の見出しに移ることをわかるようにしてください。
+                     """},
+                    {"role": "user", "content": f"""受け取りテキスト：{chunk}"""}
                 ],
                 timeout=20  # Increase the timeout value
             )
@@ -95,7 +99,7 @@ def summarize_text(text):
 
 # Discordへメッセージを送信する
 def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
-    chunks = [content[i:i + 2000] for i in range(0, len(content), 2000)]
+    chunks = [content[i:i + 1999] for i in range(0, len(content), 1999)]
 
     for chunk in chunks:
         if isinstance(chunk, bytes):
@@ -108,6 +112,11 @@ def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
             response = requests.post(webhook_url, json=data)
             if response.status_code == 204:
                 break
+            elif response.status_code == 429:
+                delay = int(response.headers['Retry-After'])
+                print(f"Rate limit hit. Waiting for {delay} seconds.")
+                time.sleep(delay)
+                retries += 1
             else:
                 print(f"Failed to send message (attempt {retries + 1}): {response.text}")
                 if retries < max_retries:
@@ -121,10 +130,10 @@ def send_discord_message(webhook_url, content, max_retries=3, retry_delay=5):
 
 # メイン処理
 def main():
-    email = os.environ.get("EMAIL")
-    password = os.environ.get("PASSWORD")
-    webhook_url = os.environ.get("WEBHOOK_URL")
-    openai.api_key = os.environ.get("OPENAI_KEY")
+    email = os.environ["EMAIL"]
+    password = os.environ["PASSWORD"]
+    webhook_url = os.environ["WEBHOOK_URL"]
+    openai.api_key = os.environ["OPENAI_KEY"]
 
     mail = connect_mail_server(email, password)
     mail_ids = get_unread_mail_ids(mail)
@@ -140,4 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
